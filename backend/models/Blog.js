@@ -7,6 +7,7 @@ const blogSchema = new mongoose.Schema(
       type: String,
       required: true,
       trim: true,
+      maxlength: 160,
     },
 
     slug: {
@@ -21,6 +22,7 @@ const blogSchema = new mongoose.Schema(
       type: String,
       required: true,
       trim: true,
+      maxlength: 500,
     },
 
     content: {
@@ -33,13 +35,11 @@ const blogSchema = new mongoose.Schema(
       default: "",
     },
 
-    // Featured article selection
     isFeatured: {
       type: Boolean,
       default: false,
     },
 
-    // SEO settings
     seoTitle: {
       type: String,
       default: "",
@@ -54,7 +54,6 @@ const blogSchema = new mongoose.Schema(
       maxlength: 170,
     },
 
-    // Social sharing image
     socialImage: {
       type: String,
       default: "",
@@ -63,6 +62,8 @@ const blogSchema = new mongoose.Schema(
     category: {
       type: String,
       default: "General",
+      trim: true,
+      maxlength: 80,
     },
 
     tags: {
@@ -73,6 +74,8 @@ const blogSchema = new mongoose.Schema(
     author: {
       type: String,
       default: "Baphin Tech",
+      trim: true,
+      maxlength: 100,
     },
 
     status: {

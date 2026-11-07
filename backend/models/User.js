@@ -1,3 +1,4 @@
+
 import mongoose from "mongoose";
 
 const userSchema = new mongoose.Schema(
@@ -60,6 +61,17 @@ const userSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
+  }
+);
+
+// Unique phone numbers, but allow multiple empty phone numbers.
+userSchema.index(
+  { phone: 1 },
+  {
+    unique: true,
+    partialFilterExpression: {
+      phone: { $type: "string", $gt: "" },
+    },
   }
 );
 

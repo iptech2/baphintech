@@ -1,19 +1,51 @@
 
+import mongoose from "mongoose";
 import Blog from "../models/Blog.js";
 
-const createSlug = (title = "") =>
-  title
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "");
+const createSlug = (value = "") =>
+  typeof value === "string"
+    ? value
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "")
+    : "";
 
-// Safely convert boolean values from frontend requests.
 const parseBoolean = (value) => {
-  return value === true || value === "true";
+  if (value === true || value === "true") return true;
+  if (value === false || value === "false") return false;
+  return null;
 };
 
-// Keep only one published featured article at a time.
+const isValidId = (id) => mongoose.Types.ObjectId.isValid(id);
+
+const handleError = (res, error, message) => {
+  console.error(message, error);
+
+  if (error.code === 11000) {
+    return res.status(409).json({
+      message: "A blog post with this slug already exists.",
+    });
+  }
+
+  if (error.name === "ValidationError") {
+    return res.status(400).json({
+      message: "Please check the blog information provided.",
+    });
+  }
+
+  if (error.name === "CastError") {
+    return res.status(400).json({
+      message: "Invalid blog information.",
+    });
+  }
+
+  return res.status(500).json({
+    message: "An unexpected server error occurred.",
+  });
+};
+
+// Keep one published featured article at a time.
 const clearOtherFeaturedBlogs = async (currentBlogId) => {
   await Blog.updateMany(
     {
@@ -27,23 +59,36 @@ const clearOtherFeaturedBlogs = async (currentBlogId) => {
   );
 };
 
-// PUBLIC: Get published blog posts.
+// PUBLIC: Get published blogs.
 export const getPublishedBlogs = async (req, res) => {
   try {
-    const blogs = await Blog.find({ status: "published" })
-      .sort({ isFeatured: -1, publishedAt: -1, createdAt: -1 });
+    const blogs = await Blog.find({
+      status: "published",
+    }).sort({
+      isFeatured: -1,
+      publishedAt: -1,
+      createdAt: -1,
+    });
 
-    res.status(200).json({ blogs });
+    return res.status(200).json({ blogs });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return handleError(res, error, "Get published blogs error:");
   }
 };
 
 // PUBLIC: Get one published blog by slug.
 export const getBlogBySlug = async (req, res) => {
   try {
+    const slug = createSlug(req.params.slug);
+
+    if (!slug) {
+      return res.status(400).json({
+        message: "Invalid blog slug.",
+      });
+    }
+
     const blog = await Blog.findOne({
-      slug: req.params.slug,
+      slug,
       status: "published",
     });
 
@@ -53,26 +98,26 @@ export const getBlogBySlug = async (req, res) => {
       });
     }
 
-    res.status(200).json({ blog });
+    return res.status(200).json({ blog });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return handleError(res, error, "Get blog by slug error:");
   }
 };
 
-// ADMIN: Get all blog posts.
+// ADMIN: Get all blogs.
 export const getAdminBlogs = async (req, res) => {
   try {
     const blogs = await Blog.find()
       .populate("createdBy", "name email")
       .sort({ createdAt: -1 });
 
-    res.status(200).json({ blogs });
+    return res.status(200).json({ blogs });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return handleError(res, error, "Get admin blogs error:");
   }
 };
 
-// ADMIN: Create blog post.
+// ADMIN: Create blog.
 export const createBlog = async (req, res) => {
   try {
     const {
@@ -91,7 +136,14 @@ export const createBlog = async (req, res) => {
       socialImage,
     } = req.body;
 
-    if (!title || !excerpt || !content) {
+    if (
+      typeof title !== "string" ||
+      typeof excerpt !== "string" ||
+      typeof content !== "string" ||
+      !title.trim() ||
+      !excerpt.trim() ||
+      !content.trim()
+    ) {
       return res.status(400).json({
         message: "Title, excerpt and content are required.",
       });
@@ -101,7 +153,7 @@ export const createBlog = async (req, res) => {
 
     if (!finalSlug) {
       return res.status(400).json({
-        message: "Please provide a valid article title or URL slug.",
+        message: "Please provide a valid article title or slug.",
       });
     }
 
@@ -113,27 +165,36 @@ export const createBlog = async (req, res) => {
       });
     }
 
-    const existingBlog = await Blog.findOne({
-      slug: finalSlug,
-    });
+    const featured =
+      isFeatured === undefined ? false : parseBoolean(isFeatured);
 
-    if (existingBlog) {
-      return res.status(409).json({
-        message: "A blog post with this slug already exists.",
+    if (featured === null) {
+      return res.status(400).json({
+        message: "Invalid featured article value.",
+      });
+    }
+
+    if (
+      tags !== undefined &&
+      (!Array.isArray(tags) ||
+        !tags.every((tag) => typeof tag === "string"))
+    ) {
+      return res.status(400).json({
+        message: "Invalid blog tags.",
       });
     }
 
     const blog = await Blog.create({
-      title,
+      title: title.trim(),
       slug: finalSlug,
-      excerpt,
+      excerpt: excerpt.trim(),
       content,
       featuredImage: featuredImage || "",
       category: category || "Technology",
-      tags: Array.isArray(tags) ? tags : [],
+      tags: tags || [],
       author: author || "Baphin Tech",
       status: finalStatus,
-      isFeatured: parseBoolean(isFeatured),
+      isFeatured: featured,
       seoTitle: seoTitle || "",
       seoDescription: seoDescription || "",
       socialImage: socialImage || "",
@@ -146,18 +207,24 @@ export const createBlog = async (req, res) => {
       await clearOtherFeaturedBlogs(blog._id);
     }
 
-    res.status(201).json({
+    return res.status(201).json({
       message: "Blog post created successfully.",
       blog,
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return handleError(res, error, "Create blog error:");
   }
 };
 
-// ADMIN: Update blog post.
+// ADMIN: Update blog.
 export const updateBlog = async (req, res) => {
   try {
+    if (!isValidId(req.params.id)) {
+      return res.status(400).json({
+        message: "Invalid blog ID.",
+      });
+    }
+
     const blog = await Blog.findById(req.params.id);
 
     if (!blog) {
@@ -183,18 +250,44 @@ export const updateBlog = async (req, res) => {
     } = req.body;
 
     if (title !== undefined) {
-      blog.title = title;
+      if (typeof title !== "string" || !title.trim()) {
+        return res.status(400).json({
+          message: "Invalid blog title.",
+        });
+      }
+
+      blog.title = title.trim();
     }
 
     if (slug !== undefined) {
-      blog.slug = createSlug(slug || title || blog.title);
+      const finalSlug = createSlug(slug || blog.title);
+
+      if (!finalSlug) {
+        return res.status(400).json({
+          message: "A valid article slug is required.",
+        });
+      }
+
+      blog.slug = finalSlug;
     }
 
     if (excerpt !== undefined) {
-      blog.excerpt = excerpt;
+      if (typeof excerpt !== "string" || !excerpt.trim()) {
+        return res.status(400).json({
+          message: "Invalid blog excerpt.",
+        });
+      }
+
+      blog.excerpt = excerpt.trim();
     }
 
     if (content !== undefined) {
+      if (typeof content !== "string" || !content.trim()) {
+        return res.status(400).json({
+          message: "Blog content cannot be empty.",
+        });
+      }
+
       blog.content = content;
     }
 
@@ -207,7 +300,16 @@ export const updateBlog = async (req, res) => {
     }
 
     if (tags !== undefined) {
-      blog.tags = Array.isArray(tags) ? tags : [];
+      if (
+        !Array.isArray(tags) ||
+        !tags.every((tag) => typeof tag === "string")
+      ) {
+        return res.status(400).json({
+          message: "Invalid blog tags.",
+        });
+      }
+
+      blog.tags = tags;
     }
 
     if (author !== undefined) {
@@ -215,7 +317,15 @@ export const updateBlog = async (req, res) => {
     }
 
     if (isFeatured !== undefined) {
-      blog.isFeatured = parseBoolean(isFeatured);
+      const featured = parseBoolean(isFeatured);
+
+      if (featured === null) {
+        return res.status(400).json({
+          message: "Invalid featured article value.",
+        });
+      }
+
+      blog.isFeatured = featured;
     }
 
     if (seoTitle !== undefined) {
@@ -248,12 +358,6 @@ export const updateBlog = async (req, res) => {
       }
     }
 
-    if (!blog.slug) {
-      return res.status(400).json({
-        message: "A valid article slug is required.",
-      });
-    }
-
     const duplicate = await Blog.findOne({
       slug: blog.slug,
       _id: { $ne: blog._id },
@@ -271,18 +375,24 @@ export const updateBlog = async (req, res) => {
       await clearOtherFeaturedBlogs(blog._id);
     }
 
-    res.status(200).json({
+    return res.status(200).json({
       message: "Blog post updated successfully.",
       blog,
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return handleError(res, error, "Update blog error:");
   }
 };
 
-// ADMIN: Delete blog post.
+// ADMIN: Delete blog.
 export const deleteBlog = async (req, res) => {
   try {
+    if (!isValidId(req.params.id)) {
+      return res.status(400).json({
+        message: "Invalid blog ID.",
+      });
+    }
+
     const blog = await Blog.findByIdAndDelete(req.params.id);
 
     if (!blog) {
@@ -291,10 +401,10 @@ export const deleteBlog = async (req, res) => {
       });
     }
 
-    res.status(200).json({
+    return res.status(200).json({
       message: "Blog post deleted successfully.",
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return handleError(res, error, "Delete blog error:");
   }
 };
