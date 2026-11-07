@@ -188,3 +188,26 @@ export const loginUser = async (req, res) => {
     });
   }
 };
+
+// GET CURRENT AUTHENTICATED USER
+export const getCurrentUser = async (req, res) => {
+  try {
+    return res.status(200).json({
+      success: true,
+      user: {
+        id: req.user._id,
+        name: req.user.name,
+        email: req.user.email,
+        phone: req.user.phone,
+        role: req.user.role,
+      },
+    });
+  } catch (error) {
+    console.error("Get current user error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Unable to retrieve user information",
+    });
+  }
+};
