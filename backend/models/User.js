@@ -17,6 +17,11 @@ const userSchema = new mongoose.Schema(
       unique: true,
       lowercase: true,
       trim: true,
+      maxlength: 254,
+      match: [
+        /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+        "Please provide a valid email address",
+      ],
     },
 
     phone: {
@@ -64,7 +69,7 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-// Unique phone numbers, but allow multiple empty phone numbers.
+// Unique phone numbers while allowing multiple empty phone numbers.
 userSchema.index(
   { phone: 1 },
   {

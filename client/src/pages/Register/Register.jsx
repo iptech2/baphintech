@@ -41,6 +41,9 @@ function Register() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (loading) return;
+
     setError("");
 
     const name = formData.name.trim();
@@ -57,8 +60,9 @@ function Register() {
       return;
     }
 
-    if (name.length < 2) {
-      setError("Your name must contain at least 2 characters.");
+    // Match backend name validation
+    if (name.length < 5) {
+      setError("Your name must contain at least 5 characters.");
       return;
     }
 
@@ -88,10 +92,9 @@ function Register() {
         throw new Error("Registration response was incomplete.");
       }
 
-      // Save the backend user and authentication token.
+      // Save backend user and authentication token
       login(user, token);
 
-      // Open the dashboard after successful registration.
       navigate("/dashboard", { replace: true });
     } catch (err) {
       const status = err.response?.status;
@@ -104,7 +107,9 @@ function Register() {
       } else if (err.response?.data?.message) {
         setError(err.response.data.message);
       } else if (err.response) {
-        setError("Registration failed. Please check your details and try again.");
+        setError(
+          "Registration failed. Please check your details and try again."
+        );
       } else {
         setError(
           err.message === "Registration response was incomplete."
@@ -168,7 +173,7 @@ function Register() {
                   onChange={handleChange}
                   placeholder="Enter your full name"
                   autoComplete="name"
-                  minLength={2}
+                  minLength={5}
                   maxLength={100}
                   required
                   disabled={loading}

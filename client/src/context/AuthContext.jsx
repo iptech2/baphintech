@@ -1,5 +1,12 @@
 
-import { createContext, useContext, useEffect, useState } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
+
+import api from "../services/api";
 
 const AuthContext = createContext(null);
 
@@ -7,25 +14,45 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // VERIFY SESSION WHEN APP LOADS
   useEffect(() => {
-    const storedUser = localStorage.getItem("baphin-user");
-    const storedToken = localStorage.getItem("baphin-token");
+    const verifySession = async () => {
+      const token = localStorage.getItem("baphin-token");
 
-    if (storedUser && storedToken) {
+      if (!token) {
+        localStorage.removeItem("baphin-user");
+        setUser(null);
+        setLoading(false);
+        return;
+      }
+
       try {
-        setUser(JSON.parse(storedUser));
+        const response = await api.get("/auth/me");
+
+        const authenticatedUser = response.data.user;
+
+        localStorage.setItem(
+          "baphin-user",
+          JSON.stringify(authenticatedUser)
+        );
+
+        setUser(authenticatedUser);
       } catch (error) {
-        console.error("Invalid stored user:", error);
+        console.error(
+          "Session verification failed:",
+          error.response?.data?.message || error.message
+        );
 
         localStorage.removeItem("baphin-user");
         localStorage.removeItem("baphin-token");
-      }
-    } else {
-      localStorage.removeItem("baphin-user");
-      localStorage.removeItem("baphin-token");
-    }
 
-    setLoading(false);
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    verifySession();
   }, []);
 
   // LOGIN
