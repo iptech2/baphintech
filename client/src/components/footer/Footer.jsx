@@ -16,7 +16,7 @@ import api from "../../services/api";
 
 function Footer() {
   const [settings, setSettings] = useState({
-    siteName: "Baphin Tech",
+    siteName: "BONETECH",
     siteDescription:
       "Building modern digital solutions that help individuals, businesses and organizations solve real-world problems through technology.",
     contactEmail: "koskeybaphin1@gmail.com",
@@ -102,10 +102,15 @@ function Footer() {
           <div className="lg:col-span-2">
             <Link
               to="/"
-              className="text-2xl font-bold text-slate-900 dark:text-white"
+              className="inline-block text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white"
             >
-              {settings.siteName || "Baphin Tech"}
+              {settings.siteName || "BONETECH"}
+              <span className="text-blue-600">.</span>
             </Link>
+
+            <p className="mt-2 text-xs font-semibold tracking-widest text-blue-600 dark:text-blue-400">
+              BAPHIN OPEN NETWORK ENTREPRENEUR
+            </p>
 
             <p className="mt-5 max-w-md leading-7 text-slate-600 dark:text-slate-400">
               {settings.siteDescription}
@@ -225,7 +230,7 @@ function Footer() {
         {/* Bottom Bar */}
         <div className="mt-14 flex flex-col justify-between gap-5 border-t border-slate-200 pt-8 dark:border-slate-800 md:flex-row md:items-center">
           <p className="text-sm text-slate-500 dark:text-slate-500">
-            © {new Date().getFullYear()} {settings.siteName || "Baphin Tech"}.
+            © {new Date().getFullYear()} {settings.siteName || "BONETECH"}.
             All rights reserved.
           </p>
 

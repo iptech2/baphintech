@@ -16,7 +16,7 @@ function Navbar() {
   );
 
   const [settings, setSettings] = useState({
-    siteName: "Baphin Tech",
+    siteName: "BONETECH",
     siteLogo: "",
   });
 
@@ -45,7 +45,6 @@ function Navbar() {
 
   const toggleDarkMode = () => {
     const newMode = !darkMode;
-
     setDarkMode(newMode);
 
     if (newMode) {
@@ -73,27 +72,31 @@ function Navbar() {
   return (
     <header className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/90 backdrop-blur-xl dark:border-slate-800/80 dark:bg-slate-950/90">
       <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-
-        {/* Logo and Website Name */}
+        {/* BONETECH Branding */}
         <Link
           to="/"
           onClick={closeMenu}
-          className="group flex items-center gap-2"
+          className="group flex items-center gap-3"
         >
           {settings.siteLogo ? (
             <img
               src={settings.siteLogo}
-              alt={settings.siteName}
+              alt="BONETECH logo"
               className="h-10 w-10 rounded-xl object-contain"
             />
           ) : (
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-lg font-bold text-white shadow-lg shadow-blue-600/20 transition group-hover:scale-105">
-              {settings.siteName?.charAt(0) || "B"}
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-purple-600 text-lg font-bold text-white shadow-lg shadow-blue-600/20 transition group-hover:scale-105">
+              B
             </span>
           )}
 
-          <span className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
-            {settings.siteName || "Baphin Tech"}
+          <span className="flex flex-col">
+            <span className="text-xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+              {settings.siteName || "BONETECH"}
+            </span>
+            <span className="text-[9px] font-semibold tracking-[0.18em] text-blue-600 dark:text-blue-400">
+              INNOVATE • DEVELOP • TRANSFORM
+            </span>
           </span>
         </Link>
 
