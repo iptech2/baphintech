@@ -4,6 +4,10 @@ import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 
 const generateToken = (user) => {
+  if (!process.env.JWT_SECRET) {
+    throw new Error("JWT_SECRET is not configured.");
+  }
+
   return jwt.sign(
     {
       id: user._id,
@@ -16,37 +20,67 @@ const generateToken = (user) => {
   );
 };
 
+const validEmail = (email) =>
+  /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
 // REGISTER
 export const registerUser = async (req, res) => {
   try {
     const { name, email, phone, password } = req.body;
 
-    if (!name || !email || !password) {
+    if (
+      typeof name !== "string" ||
+      typeof email !== "string" ||
+      typeof password !== "string" ||
+      !name.trim() ||
+      !email.trim() ||
+      !password
+    ) {
       return res.status(400).json({
         success: false,
-        message: "Name, email and password are required",
+        message: "Name, email and password are required.",
+      });
+    }
+
+    if (phone !== undefined && typeof phone !== "string") {
+      return res.status(400).json({
+        success: false,
+        message: "Phone number must be valid text.",
       });
     }
 
     const normalizedName = name.trim();
     const normalizedEmail = email.trim().toLowerCase();
-    const normalizedPhone = phone ? phone.trim() : "";
+    const normalizedPhone = phone?.trim() || "";
 
     if (normalizedName.length < 5) {
       return res.status(400).json({
         success: false,
-        message: "Name must be at least 5 characters",
+        message: "Name must be at least 5 characters.",
+      });
+    }
+
+    if (!validEmail(normalizedEmail)) {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide a valid email address.",
       });
     }
 
     if (password.length < 6) {
       return res.status(400).json({
         success: false,
-        message: "Password must be at least 6 characters",
+        message: "Password must be at least 6 characters.",
       });
     }
 
-    // Check duplicate email
+    if (password.length > 72) {
+      return res.status(400).json({
+        success: false,
+        message: "Password is too long.",
+      });
+    }
+
     const existingEmail = await User.findOne({
       email: normalizedEmail,
     });
@@ -54,11 +88,10 @@ export const registerUser = async (req, res) => {
     if (existingEmail) {
       return res.status(409).json({
         success: false,
-        message: "An account with this email already exists",
+        message: "An account with this email already exists.",
       });
     }
 
-    // Check duplicate phone only when provided
     if (normalizedPhone) {
       const existingPhone = await User.findOne({
         phone: normalizedPhone,
@@ -67,7 +100,7 @@ export const registerUser = async (req, res) => {
       if (existingPhone) {
         return res.status(409).json({
           success: false,
-          message: "An account with this phone number already exists",
+          message: "An account with this phone number already exists.",
         });
       }
     }
@@ -79,8 +112,6 @@ export const registerUser = async (req, res) => {
       email: normalizedEmail,
       phone: normalizedPhone,
       password: hashedPassword,
-
-      // Never accept a role from public registration.
       role: "user",
     });
 
@@ -88,7 +119,7 @@ export const registerUser = async (req, res) => {
 
     return res.status(201).json({
       success: true,
-      message: "Account created successfully",
+      message: "Account created successfully.",
       token,
       user: {
         id: user._id,
@@ -101,7 +132,6 @@ export const registerUser = async (req, res) => {
   } catch (error) {
     console.error("Registration error:", error);
 
-    // Handle MongoDB duplicate-key errors
     if (error.code === 11000) {
       const duplicateField = Object.keys(error.keyPattern || {})[0];
 
@@ -109,14 +139,14 @@ export const registerUser = async (req, res) => {
         success: false,
         message:
           duplicateField === "phone"
-            ? "An account with this phone number already exists"
-            : "An account with this email already exists",
+            ? "An account with this phone number already exists."
+            : "An account with this email already exists.",
       });
     }
 
     return res.status(500).json({
       success: false,
-      message: "Server error during registration",
+      message: "Server error during registration.",
     });
   }
 };
@@ -126,10 +156,15 @@ export const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    if (!email || !password) {
+    if (
+      typeof email !== "string" ||
+      typeof password !== "string" ||
+      !email.trim() ||
+      !password
+    ) {
       return res.status(400).json({
         success: false,
-        message: "Email and password are required",
+        message: "Email and password are required.",
       });
     }
 
@@ -142,14 +177,14 @@ export const loginUser = async (req, res) => {
     if (!user) {
       return res.status(401).json({
         success: false,
-        message: "Invalid email or password",
+        message: "Invalid email or password.",
       });
     }
 
     if (!user.isActive) {
       return res.status(403).json({
         success: false,
-        message: "Your account has been deactivated",
+        message: "Your account has been deactivated.",
       });
     }
 
@@ -161,7 +196,7 @@ export const loginUser = async (req, res) => {
     if (!passwordMatch) {
       return res.status(401).json({
         success: false,
-        message: "Invalid email or password",
+        message: "Invalid email or password.",
       });
     }
 
@@ -169,7 +204,7 @@ export const loginUser = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: "Login successful",
+      message: "Login successful.",
       token,
       user: {
         id: user._id,
@@ -184,7 +219,7 @@ export const loginUser = async (req, res) => {
 
     return res.status(500).json({
       success: false,
-      message: "Server error during login",
+      message: "Server error during login.",
     });
   }
 };
@@ -207,7 +242,7 @@ export const getCurrentUser = async (req, res) => {
 
     return res.status(500).json({
       success: false,
-      message: "Unable to retrieve user information",
+      message: "Unable to retrieve user information.",
     });
   }
 };

@@ -28,6 +28,12 @@ import AdminDashboard from "./pages/Admin/AdminDashboard";
 import ProjectsManagement from "./pages/Admin/Projects/ProjectsManagement";
 import CodeLibraryManagement from "./pages/Admin/CodeLibrary/CodeLibraryManagement";
 import BlogManagement from "./pages/Admin/Blog/BlogManagement";
+import AdminServices from "./pages/Admin/Services/Services";
+import UsersManagement from "./pages/Admin/Users/Users";
+import MessagesManagement from "./pages/Admin/Messages/Messages";
+import ConsultationsManagement from "./pages/Admin/Consultations/Consultations";
+import WebsiteContent from "./pages/Admin/Content/WebsiteContent";
+import SettingsManagement from "./pages/Admin/Settings/Settings";
 
 function App() {
   return (
@@ -59,7 +65,6 @@ function App() {
         element={<MainLayout><Blog /></MainLayout>}
       />
 
-      {/* Individual Blog Article */}
       <Route
         path="/blog/:slug"
         element={<MainLayout><BlogDetails /></MainLayout>}
@@ -122,6 +127,30 @@ function App() {
             path="blog"
             element={<BlogManagement />}
           />
+
+          <Route
+            path="services"
+            element={<AdminServices />}
+          />
+
+          <Route
+            path="users"
+            element={<UsersManagement />}
+          />
+          <Route path="messages"
+           element={<MessagesManagement />} 
+           />
+           <Route path="consultations"
+            element={<ConsultationsManagement />} 
+            />
+
+            <Route path="content" 
+            element={<WebsiteContent />}
+             />
+
+             <Route path="settings"
+              element={<SettingsManagement />} 
+              />
         </Route>
       </Route>
 

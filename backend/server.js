@@ -13,13 +13,19 @@ import authRoutes from "./routes/authRoutes.js";
 import projectRoutes from "./routes/projectRoutes.js";
 import codeSnippetRoutes from "./routes/codeSnippetRoutes.js";
 import blogRoutes from "./routes/blogRoutes.js";
+import serviceRoutes from "./routes/serviceRoutes.js";
+import adminUserRoutes from "./routes/adminUserRoutes.js";
+import messageRoutes from "./routes/messageRoutes.js";
+import consultationRoutes from "./routes/consultationRoutes.js";
+import websiteContentRoutes from "./routes/websiteContentRoutes.js";
+import settingsRoutes from "./routes/settingsRoutes.js";
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Render runs behind a proxy.
+// Render proxy configuration
 if (process.env.NODE_ENV === "production") {
   app.set("trust proxy", 1);
 }
@@ -28,7 +34,9 @@ if (process.env.NODE_ENV === "production") {
 connectDB();
 
 // Allowed frontend origins
-const allowedOrigins = (process.env.CLIENT_URL || "http://localhost:5173")
+const allowedOrigins = (
+  process.env.CLIENT_URL || "http://localhost:5173"
+)
   .split(",")
   .map((origin) => origin.trim().replace(/\/$/, ""))
   .filter(Boolean);
@@ -37,7 +45,6 @@ const allowedOrigins = (process.env.CLIENT_URL || "http://localhost:5173")
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests without an Origin header (e.g. server-to-server).
       if (!origin) {
         return callback(null, true);
       }
@@ -54,10 +61,8 @@ app.use(
   })
 );
 
-// Security headers
+// Security
 app.use(helmet());
-
-// HTTP request logging
 app.use(morgan("combined"));
 
 // Request body limits
@@ -83,28 +88,36 @@ const apiLimiter = rateLimit({
   },
 });
 
-// Stricter authentication rate limit
+// Login rate limit
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 10,
+  skipSuccessfulRequests: true,
   standardHeaders: "draft-8",
   legacyHeaders: false,
   message: {
     success: false,
-    message: "Too many authentication attempts. Please try again later.",
+    message: "Too many failed login attempts. Please try again later.",
   },
 });
 
-// API rate limiting
+// Apply general API rate limit
 app.use("/api", apiLimiter);
 
-// Authentication routes
-app.use("/api/auth", authLimiter, authRoutes);
+// Apply stricter limit to login only
+app.use("/api/auth/login", authLimiter);
+app.use("/api/auth", authRoutes);
 
 // Other API routes
 app.use("/api/projects", projectRoutes);
 app.use("/api/code-library", codeSnippetRoutes);
 app.use("/api/blogs", blogRoutes);
+app.use("/api/services", serviceRoutes);
+app.use("/api/admin/users", adminUserRoutes);
+app.use("/api/messages", messageRoutes);
+app.use("/api/consultations", consultationRoutes);
+app.use("/api/content", websiteContentRoutes);
+app.use("/api/settings", settingsRoutes);
 
 // Root route
 app.get("/", (req, res) => {
@@ -122,7 +135,7 @@ app.get("/api/health", (req, res) => {
   });
 });
 
-// Handle unknown routes
+// 404 handler
 app.use((req, res) => {
   res.status(404).json({
     success: false,

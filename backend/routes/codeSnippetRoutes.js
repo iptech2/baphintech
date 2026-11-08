@@ -15,14 +15,14 @@ import {
 
 const router = express.Router();
 
-// Registered users
-router.get("/", protect, getCodeSnippets);
-router.get("/:id", protect, getCodeSnippetById);
-
-// Admin only
+// Admin routes
 router.get("/admin/all", protect, adminOnly, getAdminCodeSnippets);
 router.post("/", protect, adminOnly, createCodeSnippet);
 router.put("/:id", protect, adminOnly, updateCodeSnippet);
 router.delete("/:id", protect, adminOnly, deleteCodeSnippet);
+
+// Registered users
+router.get("/", protect, getCodeSnippets);
+router.get("/:id", protect, getCodeSnippetById);
 
 export default router;

@@ -1,122 +1,180 @@
+
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
 import {
-  FaCode,
-  FaMobileAlt,
-  FaCloud,
-  FaLightbulb,
-  FaArrowRight,
-} from "react-icons/fa";
+  FiCode,
+  FiSmartphone,
+  FiCloud,
+  FiMonitor,
+  FiArrowRight,
+  FiCheckCircle,
+} from "react-icons/fi";
+
+import api from "../../services/api";
+
+const iconMap = {
+  "web development": FiCode,
+  "mobile development": FiSmartphone,
+  "cloud solutions": FiCloud,
+  "ict consultation": FiMonitor,
+};
 
 function Services() {
-  const services = [
-    {
-      icon: FaCode,
-      title: "Web Development",
-      description:
-        "Modern, responsive and scalable websites and web applications designed around your business or organization needs.",
-    },
-    {
-      icon: FaMobileAlt,
-      title: "Mobile Development",
-      description:
-        "Cross-platform mobile applications that provide smooth and user-friendly experiences across different devices.",
-    },
-    {
-      icon: FaCloud,
-      title: "Cloud Solutions",
-      description:
-        "Cloud deployment, application hosting and infrastructure solutions using modern cloud technologies.",
-    },
-    {
-      icon: FaLightbulb,
-      title: "ICT Consultation",
-      description:
-        "Practical technology advice to help individuals, businesses and organizations choose and implement the right solutions.",
-    },
-  ];
+  const [services, setServices] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const fetchServices = async () => {
+      try {
+        const response = await api.get("/services");
+        setServices(response.data.services || []);
+      } catch (err) {
+        console.error("Services loading error:", err);
+        setError("Unable to load services at the moment.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchServices();
+  }, []);
 
   return (
-    <section className="min-h-screen bg-slate-50 px-6 py-20 dark:bg-slate-950">
-      <div className="mx-auto max-w-7xl">
-        <motion.div
-          initial={{ opacity: 0, y: 25 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="max-w-3xl"
-        >
-          <p className="text-sm font-bold uppercase tracking-[0.25em] text-blue-600">
-            What I Offer
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+      {/* Hero */}
+      <section className="bg-gray-900 px-6 py-20 text-center text-white">
+        <div className="mx-auto max-w-4xl">
+          <p className="mb-4 font-semibold uppercase tracking-widest text-green-400">
+            What We Offer
           </p>
 
-          <h1 className="mt-4 text-4xl font-bold tracking-tight text-slate-900 dark:text-white md:text-5xl">
-            Technology Services
+          <h1 className="text-4xl font-bold md:text-5xl">
+            Our Services
           </h1>
 
-          <p className="mt-6 text-lg leading-8 text-slate-600 dark:text-slate-400">
-            I provide practical digital solutions that help individuals,
-            businesses and organizations use technology to solve real-world
-            problems.
+          <p className="mx-auto mt-6 max-w-2xl leading-relaxed text-gray-300">
+            We provide innovative technology solutions that help
+            individuals and businesses grow, connect and succeed
+            in the digital world.
           </p>
-        </motion.div>
+        </div>
+      </section>
 
-        <div className="mt-14 grid gap-6 md:grid-cols-2">
-          {services.map((service, index) => {
-            const Icon = service.icon;
+      {/* Services */}
+      <section className="mx-auto max-w-7xl px-6 py-16">
+        {loading ? (
+          <div className="py-16 text-center text-gray-500">
+            Loading our services...
+          </div>
+        ) : error ? (
+          <div className="py-16 text-center text-red-500">
+            {error}
+          </div>
+        ) : services.length === 0 ? (
+          <div className="py-16 text-center">
+            <h2 className="text-xl font-semibold text-gray-800 dark:text-white">
+              Services coming soon
+            </h2>
+            <p className="mt-2 text-gray-500">
+              We are preparing our services. Please check back soon.
+            </p>
+          </div>
+        ) : (
+          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+            {services.map((service) => {
+              const Icon =
+                iconMap[service.title?.toLowerCase()] || FiCode;
 
-            return (
-              <motion.div
-                key={service.title}
-                initial={{ opacity: 0, y: 25 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-                className="group rounded-2xl border border-slate-200 bg-white p-8 shadow-sm transition duration-300 hover:-translate-y-2 hover:border-blue-200 hover:shadow-xl dark:border-slate-800 dark:bg-slate-900 dark:hover:border-blue-900"
-              >
-                <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-blue-600/10 text-blue-600">
-                  <Icon size={24} />
-                </div>
-
-                <h2 className="mt-6 text-2xl font-bold text-slate-900 dark:text-white">
-                  {service.title}
-                </h2>
-
-                <p className="mt-4 leading-7 text-slate-600 dark:text-slate-400">
-                  {service.description}
-                </p>
-
-                <Link
-                  to="/contact"
-                  className="mt-6 inline-flex items-center gap-2 font-semibold text-blue-600 transition hover:text-blue-700"
+              return (
+                <article
+                  key={service._id}
+                  className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg dark:border-gray-800 dark:bg-gray-900"
                 >
-                  Discuss a project
-                  <FaArrowRight className="text-sm transition group-hover:translate-x-1" />
-                </Link>
-              </motion.div>
-            );
-          })}
-        </div>
+                  {service.image && (
+                    <img
+                      src={service.image}
+                      alt={service.title}
+                      loading="lazy"
+                      className="h-48 w-full object-cover"
+                    />
+                  )}
 
-        <div className="mt-16 rounded-2xl bg-blue-600 px-8 py-12 text-center text-white">
-          <h2 className="text-3xl font-bold">
-            Have a technology challenge?
-          </h2>
+                  <div className="p-7">
+                    <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-xl bg-green-100 text-2xl text-green-700 dark:bg-green-900/40 dark:text-green-400">
+                      <Icon />
+                    </div>
 
-          <p className="mx-auto mt-4 max-w-2xl leading-7 text-blue-100">
-            Let's discuss your idea and find a practical technology solution
-            that fits your needs.
-          </p>
+                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                      {service.title}
+                    </h2>
 
-          <Link
-            to="/contact"
-            className="mt-7 inline-flex items-center gap-3 rounded-xl bg-white px-6 py-3 font-semibold text-blue-600 transition hover:-translate-y-1"
-          >
-            Get in Touch
-            <FaArrowRight />
-          </Link>
-        </div>
-      </div>
-    </section>
+                    <p className="mt-3 leading-relaxed text-gray-600 dark:text-gray-400">
+                      {service.shortDescription}
+                    </p>
+
+                    {service.features?.length > 0 && (
+                      <ul className="mt-5 space-y-2">
+                        {service.features.map((feature, index) => (
+                          <li
+                            key={`${service._id}-feature-${index}`}
+                            className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-300"
+                          >
+                            <FiCheckCircle className="mt-1 shrink-0 text-green-600" />
+                            {feature}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+
+                    {service.technologies?.length > 0 && (
+                      <div className="mt-5 flex flex-wrap gap-2">
+                        {service.technologies.map((technology, index) => (
+                          <span
+                            key={`${service._id}-tech-${index}`}
+                            className="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700 dark:bg-gray-800 dark:text-gray-300"
+                          >
+                            {technology}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    <Link
+                      to="/contact"
+                      className="mt-7 inline-flex items-center gap-2 font-semibold text-green-600 transition hover:gap-3 hover:text-green-700"
+                    >
+                      Request This Service
+                      <FiArrowRight />
+                    </Link>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        )}
+      </section>
+
+      {/* Call to action */}
+      <section className="bg-green-700 px-6 py-16 text-center text-white">
+        <h2 className="text-3xl font-bold">
+          Have a Project in Mind?
+        </h2>
+
+        <p className="mx-auto mt-4 max-w-2xl text-green-100">
+          Let's discuss how Baphin Tech can help bring your ideas
+          to life through technology.
+        </p>
+
+        <Link
+          to="/contact"
+          className="mt-7 inline-flex items-center gap-2 rounded-lg bg-white px-6 py-3 font-semibold text-green-700 transition hover:bg-gray-100"
+        >
+          Contact Us
+          <FiArrowRight />
+        </Link>
+      </section>
+    </div>
   );
 }
 
